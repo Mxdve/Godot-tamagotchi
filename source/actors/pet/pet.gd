@@ -192,7 +192,7 @@ func _physics_process(_delta):
 		hunger_timer = 0.0
 
 	# ============================
-	# 8. OTHER TIMERS
+	# 8. OTHER TIMERS 
 	# ============================
 	if state == PetState.EXERCISING and exercise_time >= 2.0:
 		hygiene_timer += _delta
