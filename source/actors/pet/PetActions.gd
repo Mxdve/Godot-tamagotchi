@@ -32,6 +32,8 @@ var poop_counter = 0
 var feed_limit = 4
 var pet_limit = 3
 
+var sleep_counter = 0
+
 # ==========================================
 # SIGNALS
 # ==========================================
@@ -152,7 +154,7 @@ func handle_food_reaction():
 		
 	# Case 3: Normal successful feeding.
 	reaction_popup('happy')
-	pet.pet_stats.hunger -= 25 # Lowers hunger stat (closer to 0 is full)
+	pet.pet_stats.hunger -= 40 # Lowers hunger stat (closer to 0 is full)
 	pet.pet_stats.happiness += 5
 	pet.gain_experience(2)
 
@@ -191,9 +193,10 @@ func clean():
 	elif pet.pet_stats.hygiene < 30:
 		pet.pet_stats.happiness += 15
 		
-	# Reset hygiene back to max (100).
-	pet.pet_stats.hygiene = 100
+	pet.pet_stats.hygiene += 10
+
 	pet.gain_experience(1)
+	
 
 func play():
 	pet.pet_stats.fun += 25
@@ -203,7 +206,6 @@ func play():
 func socialize():
 	pet.pet_stats.social += 25
 	pet.pet_stats.tiredness += 5
-	pet.pet_stats.hunger += 5
 	pet.gain_experience(1)
 
 # Toggles the sleeping state back and forth.
@@ -217,6 +219,7 @@ func toggle_sleep():
 		pet.state = pet.PetState.IDLE
 	else:
 		pet.state = pet.PetState.SLEEPING
+		sleep_counter += 5
 		
 	# Signal out to notify other systems (like turning off room lights).
 	emit_signal("sleepingToggled", pet.state)
@@ -234,16 +237,20 @@ func random_poop_chance():
 func spawn_poop():
 	pet.pet_stats.hygiene -= 10
 	poop_counter += 1
+	print("POOP SPAWNED! poop_counter =", poop_counter + 1)
 	
 	# Instantiate poop scene into the world.
 	var poop = poopItem.instantiate()
 	pet.get_parent().add_child(poop)
 	
+	poop.z_as_relative = false
+	poop.z_index = 100
+	
 	# Connect the poop's internal signal to decrement the counter when the player cleans it up.
 	poop.poop_removed.connect(poop_removed)
 	
 	# Position the poop near the pet's X coordinate with random variation.
-	poop.position = Vector2(pet.global_position.x + randf_range(-200, 200), 355)
+	poop.position = Vector2(pet.global_position.x + randf_range(-1, 1), 355)
 
 # Triggered when a poop object is clicked/cleaned by the player.
 func poop_removed():

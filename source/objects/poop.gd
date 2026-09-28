@@ -1,6 +1,7 @@
 # This script extends "Area2D", allowing it to detect mouse clicks and physical touches in 2D space.
 # It controls the interaction for cleanup items (like poop) spawned in the room.
 extends Area2D
+class_name Poop
 
 # ==========================================
 # SIGNALS
