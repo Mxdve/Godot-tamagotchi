@@ -122,7 +122,7 @@ func reset_average_stat_tracking():
 func reset_and_randomize_stats():
 	# Multiplies randi_range(1,8) by 5 to give clean step increments (5, 10, 15... up to 40).
 	happiness = randi_range(1,8) * 5
-	hunger = MAX_STAT - randi_range(1,8) * 5
+	hunger = MAX_STAT - randi_range(8,10) * 5
 	hygiene = randi_range(1,8) * 5
 	fun = randi_range(1,8) * 5
 	social = randi_range(1,8) * 5

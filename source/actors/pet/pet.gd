@@ -17,6 +17,10 @@ class_name Pet
 @onready var sprite = $Sprite2D
 @onready var petDebugLabel = $PetDebugLabel
 
+@export var normal_texture: Texture2D
+@export var exercise_texture: Texture2D
+@export var hungry_texture: Texture2D
+
 # ==========================================
 # VARIABLES & SETTINGS
 # ==========================================
@@ -45,7 +49,7 @@ const CENTER_POS = Vector2(256, 318)
 # ==========================================
 # An enum is a way to create a list of named numbers. (IDLE = 0, WALKING = 1, etc.)
 # It makes code much easier to read than trying to remember what "state 1" means.
-enum PetState { IDLE, WALKING, EATING, SLEEPING }
+enum PetState { IDLE, WALKING, EATING, SLEEPING, EXERCISING, WALKING_OUT }
 var state: PetState = PetState.IDLE
 
 # ==========================================
@@ -53,14 +57,171 @@ var state: PetState = PetState.IDLE
 # ==========================================
 var experience = 0
 var collected_experience = 0
+var speed := 150.0
 @export var experience_level = 1
 # Calculates how much XP is needed for the NEXT level right when the pet is created.
 var experience_required = get_required_experience(experience_level + 1)
 
 # _physics_process runs constantly (usually 60 times a second). 
 # It's normally used for movement/gravity, but here it's just updating debug text.
+
+# Feature Branch Edit: Added by Madeleine Banaszak for Assignment 2
+@onready var exercise_bar = null
+var exercise_value := 0.0
+var exercise_fill_rate := 20.0
+var exercise_decay_rate := 1.0
+var exercise_time := 0.0
+var hygiene_timer := 0.0
+var fun_timer := 0.0
+var hunger_timer := 0.0
+
+func _ready():
+	call_deferred("_find_exercise_bar")
+	
+func _find_exercise_bar():
+	exercise_bar = get_tree().get_root().get_node("MainScene/StatusUI/HBoxContainer/VBoxContainer/ExerciseBar")	
+
 func _physics_process(_delta):
-	# Converts the current state number (like 0) back into its text name (like "IDLE") for debugging
+	var direction := 0
+	
+	if state == PetState.WALKING_OUT:
+		petDebugLabel.text = "WALKING OUT"
+		return
+		
+	if state == PetState.SLEEPING:
+		petDebugLabel.text = "SLEEPING"
+		velocity.x = 0
+		move_and_slide()
+		exercise_value -= exercise_decay_rate * _delta
+		exercise_time = 0.0
+
+		# Clamp exercise bar
+		exercise_value = clamp(exercise_value, 0, 100)
+
+		# Update UI bar
+		if exercise_bar:
+			exercise_bar.value = exercise_value
+			
+		return
+
+	# ============================
+	# 1. HUNGRY CHECK (FREEZE PET)
+	# ============================
+	if pet_stats.hunger > 90:
+		# Freeze movement
+		velocity.x = 0
+		move_and_slide()
+
+		# Force idle state
+		state = PetState.IDLE
+
+		# Apply hungry texture
+		sprite.texture = resource.hungry_texture
+		petDebugLabel.text = "HUNGRY >:("
+
+		# Exercise drains while hungry
+		exercise_value -= exercise_decay_rate * _delta
+		exercise_time = 0.0
+
+		# Clamp exercise bar
+		exercise_value = clamp(exercise_value, 0, 100)
+
+		# Update UI bar
+		if exercise_bar:
+			exercise_bar.value = exercise_value
+
+		return
+
+	# ============================
+	# 2. MOVEMENT INPUT
+	# ============================
+	if Input.is_action_pressed("move_left"):
+		direction = -1
+	elif Input.is_action_pressed("move_right"):
+		direction = 1
+	else:
+		direction = 0
+
+	# ============================
+	# 3. APPLY MOVEMENT
+	# ============================
+	velocity.x = direction * speed
+	move_and_slide()
+
+	# ============================
+	# 4. ROOM BOUNDARIES
+	# ============================
+	var left_limit := 35
+	var right_limit := 480
+	var top_limit := 0
+	var bottom_limit := 360
+
+	global_position.x = clamp(global_position.x, left_limit, right_limit)
+	global_position.y = clamp(global_position.y, top_limit, bottom_limit)
+
+	# ============================
+	# 5. FLIP SPRITE
+	# ============================
+	if direction == -1:
+		sprite.flip_h = true
+	elif direction == 1:
+		sprite.flip_h = false
+
+	# ============================
+	# 6. MOVEMENT TEXTURES & STATE
+	# ============================
+	if state != PetState.SLEEPING and state != PetState.EATING:
+		if direction != 0:
+			sprite.texture = resource.exercise_texture
+			state = PetState.EXERCISING
+		else:
+			sprite.texture = resource.normal_texture
+			state = PetState.IDLE
+
+	# ============================
+	# 7. EXERCISE LOGIC
+	# ============================
+	if state == PetState.EXERCISING:
+		exercise_value += exercise_fill_rate * _delta
+		exercise_time += _delta
+	else:
+		exercise_value -= exercise_decay_rate * _delta
+		exercise_time = 0.0
+		hygiene_timer = 0.0
+		fun_timer = 0.0
+		hunger_timer = 0.0
+
+	# ============================
+	# 8. OTHER TIMERS
+	# ============================
+	if state == PetState.EXERCISING and exercise_time >= 2.0:
+		hygiene_timer += _delta
+		fun_timer += _delta
+		hunger_timer += _delta
+
+	# Hygiene decay
+	if hygiene_timer >= 1.0:
+		pet_stats.hygiene -= 8
+		hygiene_timer = 0.0
+
+	# Fun gain
+	if fun_timer >= 0.7:
+		pet_stats.fun += 10
+		fun_timer = 0.0
+
+	# Hunger increase
+	if hunger_timer >= 1.0:
+		pet_stats.hunger += 3
+		hunger_timer = 0.0
+
+	# ============================
+	# 9. CLAMP + UI UPDATE
+	# ============================
+	exercise_value = clamp(exercise_value, 0, 100)
+
+	if exercise_bar:
+		exercise_bar.value = exercise_value
+
 	petDebugLabel.text = PetState.keys()[state]
 
 # ==========================================
@@ -81,6 +242,9 @@ func get_pet_save_data():
 	my_data.feed_counter = pet_actions.feed_counter
 	my_data.pet_counter = pet_actions.pet_counter
 	my_data.poop_counter = pet_actions.poop_counter
+	
+	my_data.exercise_value = exercise_value
+	
 	return my_data
 
 # Takes a loaded save file ("saved_data") and unpacks it, overwriting the pet's current stats.
@@ -98,9 +262,11 @@ func update_to_save_data(saved_data:SavedData):
 	pet_actions.pet_counter = saved_data.pet_counter
 	pet_actions.poop_counter = saved_data.poop_counter
 	
+	exercise_value = saved_data.exercise_value
+	
 # Applies the image stored inside the custom resource to the actual Sprite2D node.
 func update_resource():
-	sprite.texture = resource.texture
+	sprite.texture = resource.normal_texture
 
 # ==========================================
 # LEVELING MATH & LOGIC
@@ -170,7 +336,7 @@ func walk_out_of_scene():
 	if state == PetState.SLEEPING:
 		pet_actions.toggle_sleep()
 		
-	state = PetState.WALKING
+	state = PetState.WALKING_OUT
 	
 	# Calculate a new position off-screen to the left (X: -50)
 	var new_position = Vector2(-50, position.y)
@@ -181,4 +347,5 @@ func walk_out_of_scene():
 	
 	# Wait for the slide to finish.
 	await tween.finished
+	Global.day += 1
 	state = PetState.IDLE

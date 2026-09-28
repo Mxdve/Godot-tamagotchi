@@ -26,6 +26,10 @@ enum AnimalType { Monkey, Capybara }
 # Gives this pet species a default starting name.
 @export var name: String = 'Grumpel'
 
+@export var normal_texture: Texture2D
+@export var exercise_texture: Texture2D
+@export var hungry_texture: Texture2D
+
 # ==========================================
 # HELPER FUNCTIONS
 # ==========================================

@@ -22,6 +22,7 @@ class_name SavedPet
 @export var fun: int
 @export var social: int
 @export var tiredness: int
+@export var exercise_value: float
 
 # Historical stat-tracking data used to calculate long-term average health.
 @export var cumulative_avg_stats: float

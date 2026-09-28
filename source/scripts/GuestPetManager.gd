@@ -125,8 +125,8 @@ func introduce_guest_pet():
 	# Pick a random pet species from the guest resources array.
 	current_guest_pet_resource = guest_pet_resources[randi() % guest_pet_resources.size()]
 	
-	# Assign random stay duration between 1 and 12 hours.
-	stay_duration_hours = randi_range(1, 12)
+	# Assign random stay duration between 1 and 3 hours.
+	stay_duration_hours = randi_range(1, 3)
 	set_pet_exit_time()
 	print('exit time:', pet_exit_time)
 	

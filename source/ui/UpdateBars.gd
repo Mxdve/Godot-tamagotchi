@@ -55,6 +55,8 @@ func update_pet(new_pet: Node):
 	pet = new_pet
 	connect_pet_signals()
 	update()
+	
+	pet.pet_actions.poop_counter = 0
 
 # ==========================================
 # SIGNAL BINDING
