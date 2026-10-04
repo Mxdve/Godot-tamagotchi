@@ -4,10 +4,11 @@
 [ext_resource type="Texture2D" uid="uid://b5v480463vn1t" path="res://assets/img/Pets/monki_exercise.png" id="1_3aene"]
 [ext_resource type="Texture2D" uid="uid://byedsvlx673ru" path="res://assets/img/Pets/monki.png" id="2_7mcrh"]
 [ext_resource type="Texture2D" uid="uid://dwnv75jr4bn0g" path="res://assets/img/Pets/monki_hungry.png" id="2_fo3sv"]
+[ext_resource type="Texture2D" uid="uid://bpst0cqjenuqm" path="res://assets/img/Pets/monki_normal.png" id="3_xcp7v"]
 
 [resource]
 script = ExtResource("1_2kgeb")
 texture = ExtResource("2_7mcrh")
-normal_texture = ExtResource("2_7mcrh")
+normal_texture = ExtResource("3_xcp7v")
 exercise_texture = ExtResource("1_3aene")
 hungry_texture = ExtResource("2_fo3sv")
