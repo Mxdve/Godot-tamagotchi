@@ -25,7 +25,7 @@ class_name Pet
 # VARIABLES & SETTINGS
 # ==========================================
 # @export makes this variable visible in the Godot Inspector panel.
-@export var resource: Resource:
+@export var resource: petResource:
 	# This is a "setter". Whenever "resource" is changed (either in code or the inspector),
 	# this block of code runs automatically.
 	set(new_resource):
@@ -74,6 +74,7 @@ var exercise_time := 0.0
 var hygiene_timer := 0.0
 var fun_timer := 0.0
 var hunger_timer := 0.0
+var coin_timer := 0.0
 
 func _ready():
 	call_deferred("_find_exercise_bar")
@@ -84,9 +85,9 @@ func _find_exercise_bar():
 func _physics_process(_delta):
 	var direction := 0
 	
-	if state == PetState.WALKING_OUT:
-		petDebugLabel.text = "WALKING OUT"
-		return
+	#if state == PetState.WALKING_OUT:
+		#petDebugLabel.text = "WALKING OUT"
+		#return
 		
 	if state == PetState.SLEEPING:
 		petDebugLabel.text = "SLEEPING"
@@ -107,7 +108,7 @@ func _physics_process(_delta):
 	# ============================
 	# 1. HUNGRY CHECK (FREEZE PET)
 	# ============================
-	if pet_stats.hunger > 90:
+	if pet_stats.hunger > 90 and resource:
 		# Freeze movement
 		velocity.x = 0
 		move_and_slide()
@@ -170,13 +171,14 @@ func _physics_process(_delta):
 	# ============================
 	# 6. MOVEMENT TEXTURES & STATE
 	# ============================
-	if state != PetState.SLEEPING and state != PetState.EATING:
-		if direction != 0:
-			sprite.texture = resource.exercise_texture
-			state = PetState.EXERCISING
-		else:
-			sprite.texture = resource.normal_texture
-			state = PetState.IDLE
+	if resource:
+		if state != PetState.SLEEPING and state != PetState.EATING:
+			if direction == 0:
+				sprite.texture = resource.normal_texture
+				state = PetState.IDLE
+			else:
+				sprite.texture = resource.exercise_texture
+				state = PetState.EXERCISING
 
 	# ============================
 	# 7. EXERCISE LOGIC
@@ -190,6 +192,7 @@ func _physics_process(_delta):
 		hygiene_timer = 0.0
 		fun_timer = 0.0
 		hunger_timer = 0.0
+		coin_timer = 0.0
 
 	# ============================
 	# 8. OTHER TIMERS 
@@ -198,6 +201,7 @@ func _physics_process(_delta):
 		hygiene_timer += _delta
 		fun_timer += _delta
 		hunger_timer += _delta
+		coin_timer += _delta
 
 	# Hygiene decay
 	if hygiene_timer >= 1.0:
@@ -213,6 +217,11 @@ func _physics_process(_delta):
 	if hunger_timer >= 1.0:
 		pet_stats.hunger += 3
 		hunger_timer = 0.0
+		
+	# Coin gain (if you continuously move)
+	if coin_timer >= 4.0:
+		Global.coins += 1
+		coin_timer = 0.0
 
 	# ============================
 	# 9. CLAMP + UI UPDATE
@@ -336,7 +345,7 @@ func walk_out_of_scene():
 	if state == PetState.SLEEPING:
 		pet_actions.toggle_sleep()
 		
-	state = PetState.WALKING_OUT
+	state = PetState.WALKING
 	
 	# Calculate a new position off-screen to the left (X: -50)
 	var new_position = Vector2(-50, position.y)
@@ -347,5 +356,4 @@ func walk_out_of_scene():
 	
 	# Wait for the slide to finish.
 	await tween.finished
-	Global.day += 1
 	state = PetState.IDLE
